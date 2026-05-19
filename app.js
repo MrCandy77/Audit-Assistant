@@ -9,9 +9,22 @@
 
   const STORAGE_KEY = "saa:v1";
   const DAY_MS = 24 * 60 * 60 * 1000;
+  const MAX_ROWS = 25000;
 
   const $ = (id) => document.getElementById(id);
   const banner = $("banner");
+
+  // Crash guard: show a friendly banner instead of a blank screen.
+  window.addEventListener("error", () => {
+    try {
+      showBanner("Something went wrong while processing the file. Try a different export or use column mapping.", "error");
+    } catch {}
+  });
+  window.addEventListener("unhandledrejection", () => {
+    try {
+      showBanner("Something went wrong while processing the file. Try a different export or use column mapping.", "error");
+    } catch {}
+  });
 
   function showBanner(message, type = "ok") {
     banner.hidden = false;
@@ -99,10 +112,29 @@
     if (value == null) return null;
     const s = String(value).trim();
     if (!s) return null;
-    // Remove currency symbols and spaces, keep digits, commas, dots, minus
-    const cleaned = s
-      .replace(/[^\d,.\-]/g, "")
-      .replace(/,(?=\d{3}(\D|$))/g, ""); // remove thousands commas
+
+    // Keep digits, comma, dot, minus; drop currency symbols/spaces.
+    let cleaned = s.replace(/[^\d,.\-]/g, "");
+
+    // Handle common formats:
+    // - 1,234.56 (US)
+    // - 1.234,56 (EU)
+    // - 1234,56  (comma decimals)
+    const hasComma = cleaned.includes(",");
+    const hasDot = cleaned.includes(".");
+    if (hasComma && hasDot) {
+      const lastComma = cleaned.lastIndexOf(",");
+      const lastDot = cleaned.lastIndexOf(".");
+      if (lastComma > lastDot) {
+        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+      } else {
+        cleaned = cleaned.replace(/,(?=\d{3}(\D|$))/g, "");
+      }
+    } else if (hasComma && !hasDot) {
+      if (/,(\d{1,2})$/.test(cleaned)) cleaned = cleaned.replace(",", ".");
+      else cleaned = cleaned.replace(/,(?=\d{3}(\D|$))/g, "");
+    }
+
     const n = Number(cleaned);
     if (Number.isNaN(n)) return null;
     return n;
@@ -137,11 +169,23 @@
   }
 
   function guessCurrencyFromText(text) {
-    const t = (text || "").toUpperCase();
-    if (t.includes("ZAR") || t.includes("R ")) return "ZAR";
-    if (t.includes("GBP") || t.includes("£")) return "GBP";
-    if (t.includes("EUR") || t.includes("€")) return "EUR";
-    if (t.includes("USD") || t.includes("$")) return "USD";
+    const raw = String(text || "");
+    const t = raw.toUpperCase();
+
+    // Prefer explicit ISO currency codes
+    if (/\bZAR\b/.test(t)) return "ZAR";
+    if (/\bUSD\b/.test(t)) return "USD";
+    if (/\bEUR\b/.test(t)) return "EUR";
+    if (/\bGBP\b/.test(t)) return "GBP";
+
+    // Symbols
+    if (/[€]/.test(raw)) return "EUR";
+    if (/[£]/.test(raw)) return "GBP";
+    if (/\$/.test(raw)) return "USD";
+
+    // Rand sign is ambiguous ("R"), so only treat as ZAR when it looks like currency amounts
+    if (/(^|[^\w])R\s?\d/.test(raw)) return "ZAR";
+
     return "ZAR";
   }
 
@@ -317,6 +361,8 @@
 
   function buildTransactions(rows, mapping) {
     const tx = [];
+    if (!rows?.length) return tx;
+    if (!mapping || mapping.date == null || mapping.desc == null || mapping.amt == null) return tx;
     for (const r of rows) {
       const dateRaw = r[mapping.date] ?? "";
       const descRaw = r[mapping.desc] ?? "";
@@ -534,9 +580,21 @@
       desc: Number($("mapDesc").value),
       amt: Number($("mapAmount").value),
     };
+    if (![map.date, map.desc, map.amt].every((n) => Number.isFinite(n) && n >= 0)) {
+      showBanner("Please select valid columns for Date, Description, and Amount.", "error");
+      return;
+    }
+    if (new Set([map.date, map.desc, map.amt]).size !== 3) {
+      showBanner("Date, Description, and Amount must be different columns.", "error");
+      return;
+    }
     const headers = state.rawCsv.headers;
     const dataRows = state.rawCsv.rows;
     const tx = buildTransactions(dataRows, map);
+    if (!tx.length) {
+      showBanner("No transactions parsed with that mapping. Try different columns (especially Amount).", "error");
+      return;
+    }
     state.mapping = map;
     state.transactions = tx;
     state.subscriptions = detectSubscriptions(tx, $("strictness").value);
@@ -574,7 +632,7 @@
     const tbody = $("reviewBody");
     tbody.innerHTML = "";
 
-    const currency = state.currency || "USD";
+    const currency = state.currency || "ZAR";
     for (const s of state.subscriptions || []) {
       const status = s.dormant90 ? `<span class="pill warn">No charge in 90 days</span>` : `<span class="pill good">Active billing</span>`;
       const row = document.createElement("tr");
@@ -606,7 +664,7 @@
   }
 
   function renderDashboard(state) {
-    const currency = state.currency || "USD";
+    const currency = state.currency || "ZAR";
     const subs = state.subscriptions || [];
     const monthly = subs.reduce((sum, s) => sum + (Number(s.avgMonthly) || 0), 0);
     const dormant = subs.filter((s) => s.dormant90).length;
@@ -694,14 +752,24 @@
       showBanner("Please choose a .csv file.", "error");
       return;
     }
-    const text = await file.text();
+    let text = "";
+    try {
+      text = await file.text();
+    } catch {
+      showBanner("Couldn’t read this file. Try exporting the CSV again.", "error");
+      return;
+    }
     const rows = parseCSV(text);
     if (!rows || rows.length < 2) {
       showBanner("Couldn’t read rows from this CSV. Try exporting again.", "error");
       return;
     }
     const headers = rows[0].map((h, i) => (String(h || "").trim() ? String(h).trim() : `Column ${i + 1}`));
-    const dataRows = rows.slice(1).filter((r) => r.some((x) => String(x ?? "").trim() !== ""));
+    let dataRows = rows.slice(1).filter((r) => r.some((x) => String(x ?? "").trim() !== ""));
+    if (dataRows.length > MAX_ROWS) {
+      dataRows = dataRows.slice(0, MAX_ROWS);
+      showBanner(`Large CSV detected. Imported first ${MAX_ROWS.toLocaleString()} rows for performance.`, "warn");
+    }
 
     const sample = dataRows.slice(0, 40);
     const { mapping, confidence, cols } = detectColumns(headers, sample);
