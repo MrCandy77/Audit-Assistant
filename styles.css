@@ -1,0 +1,215 @@
+:root{
+  --bg:#0b0f1a;
+  --surface:#0f1626;
+  --surface2:#101b30;
+  --text:#e7edf7;
+  --muted:#a2aec3;
+  --border:rgba(255,255,255,.08);
+  --shadow: 0 10px 22px rgba(0,0,0,.32);
+  --shadow2: 0 2px 10px rgba(0,0,0,.22);
+  --accent:#60a5fa;
+  --accent2:#3b82f6;
+  --success:#22c55e;
+  --danger:#ef4444;
+  --warn:#f59e0b;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 22%),
+              radial-gradient(1000px 800px at 30% -15%, rgba(96,165,250,.10), transparent 55%),
+              var(--bg);
+  color:var(--text);
+  line-height: 1.45;
+}
+a{color:inherit}
+.app-header{
+  position:sticky; top:0; z-index:5;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  backdrop-filter: blur(8px);
+  background: rgba(11,15,26,.86);
+}
+.brand{display:flex; gap:12px; align-items:center}
+.logo{
+  width:38px; height:38px; border-radius:12px;
+  background: linear-gradient(180deg, rgba(96,165,250,.24), rgba(96,165,250,.10));
+  border: 1px solid rgba(96,165,250,.25);
+  box-shadow: var(--shadow2);
+}
+.brand-title{font-weight:650; letter-spacing:.15px}
+.brand-subtitle{color:var(--muted); font-size:12px; margin-top:2px}
+.header-actions{display:flex; gap:8px}
+
+.app-main{max-width:1050px; margin:0 auto; padding:18px}
+.app-footer{max-width:1050px; margin:0 auto; padding:18px; color:var(--muted)}
+
+.card{
+  background: linear-gradient(180deg, rgba(15,22,38,.92), rgba(15,22,38,.88));
+  border:1px solid var(--border);
+  box-shadow: var(--shadow);
+  border-radius:12px;
+  padding:16px;
+  margin: 14px 0;
+}
+.card.subtle{
+  box-shadow:none;
+  background: rgba(15,22,38,.55);
+}
+.grid{display:grid; grid-template-columns: 1.25fr .75fr; gap:14px}
+@media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+
+.h1{margin:0 0 6px; font-size:20px; font-weight:650}
+.h2{margin:0 0 8px; font-size:16px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+
+.banner{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  margin: 10px 0 0;
+  background: rgba(34,197,94,.10);
+}
+.banner.error{background: rgba(239,68,68,.10)}
+.banner.warn{background: rgba(245,158,11,.10)}
+
+.dropzone{
+  position:relative;
+  border:1px dashed rgba(255,255,255,.16);
+  background: rgba(15,22,38,.40);
+  border-radius:12px;
+  min-height: 210px;
+  outline:none;
+}
+.dropzone:focus{box-shadow: 0 0 0 3px rgba(96,165,250,.22)}
+.dropzone input[type="file"]{
+  position:absolute; inset:0; opacity:0; cursor:pointer;
+}
+.dropzone-inner{
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  min-height:210px;
+  padding:18px;
+  text-align:center;
+}
+.dz-title{font-size:16px; font-weight:650}
+.dz-subtitle{margin-top:4px; color:var(--muted)}
+.dz-hint{margin-top:12px; font-size:12px; color:var(--muted)}
+
+.steps{margin:10px 0 0 18px; color:var(--muted)}
+.steps li{margin:6px 0}
+
+.row{display:flex; align-items:center}
+.row.between{justify-content:space-between}
+.row.gap{gap:10px}
+.row.wrap{flex-wrap:wrap}
+.between{justify-content:space-between}
+
+.btn{
+  appearance:none;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  color:var(--text);
+  background: rgba(255,255,255,.03);
+  cursor:pointer;
+  font-weight:600;
+}
+.btn:hover{background: rgba(255,255,255,.05)}
+.btn:active{transform: translateY(1px)}
+.btn-primary{
+  border-color: rgba(96,165,250,.35);
+  background: linear-gradient(180deg, rgba(59,130,246,.22), rgba(59,130,246,.10));
+}
+.btn-primary:hover{background: linear-gradient(180deg, rgba(59,130,246,.26), rgba(59,130,246,.12))}
+.btn-ghost{background: transparent}
+
+.field{
+  display:flex; flex-direction:column; gap:6px;
+  font-size:12px; color:var(--muted);
+}
+select{
+  color:var(--text);
+  background: rgba(255,255,255,.03);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 12px;
+  min-width: 210px;
+}
+
+.stats{display:flex; gap:12px; flex-wrap:wrap; margin: 10px 0}
+.stats.big .stat{min-width: 260px}
+.stat{
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  border-radius:12px;
+  padding:12px;
+  min-width: 220px;
+}
+.stat-label{font-size:12px; color:var(--muted)}
+.stat-value{font-size:22px; font-weight:800; margin-top:4px}
+
+.table-wrap{overflow:auto; border-radius:14px; border:1px solid var(--border); margin-top:10px}
+.table{width:100%; border-collapse:collapse; min-width:760px}
+.table th,.table td{padding:12px 10px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle}
+.table th{font-size:12px; color:var(--muted); text-align:left; background: rgba(255,255,255,.02)}
+.pill{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:12px;
+  border-radius:999px;
+  padding:6px 10px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+.pill.danger{border-color: rgba(239,68,68,.30); background: rgba(239,68,68,.08)}
+.pill.warn{border-color: rgba(245,158,11,.30); background: rgba(245,158,11,.08)}
+.pill.good{border-color: rgba(34,197,94,.30); background: rgba(34,197,94,.08)}
+
+.inline-input{
+  width:100%;
+  color:var(--text);
+  background: rgba(255,255,255,.02);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 10px;
+}
+.mini-btn{
+  border:1px solid var(--border);
+  background: transparent;
+  color:var(--muted);
+  border-radius:10px;
+  padding:8px 10px;
+  cursor:pointer;
+}
+.mini-btn:hover{color:var(--text); background: rgba(255,255,255,.05)}
+
+.list{display:flex; flex-direction:column; gap:10px}
+.item{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:12px;
+  background: rgba(255,255,255,.02);
+}
+.item-title{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.item-title b{font-size:14px}
+.item-meta{color:var(--muted); font-size:12px; margin-top:6px}
+.spark{
+  margin-top:10px;
+  height:34px;
+  width:100%;
+  border-radius:10px;
+  background: rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.06);
+  overflow:hidden;
+}
+.spark svg{display:block; width:100%; height:100%}
+
+/* Subtle focus rings (professional) */
+:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.22);
+  border-radius: 10px;
+}

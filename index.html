@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>Subscription Audit Assistant</title>
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="brand-title">Subscription Audit Assistant</div>
+          <div class="brand-subtitle">Import CSV • Review • Analyze</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnExport" class="btn btn-ghost" type="button" title="Export your detected subscriptions">
+          Export
+        </button>
+        <button id="btnReset" class="btn btn-ghost" type="button" title="Clear all local data">
+          Reset
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section id="banner" class="banner" role="status" aria-live="polite" hidden></section>
+
+      <section id="onboarding" class="card">
+        <h1 class="h1">Import transactions</h1>
+        <p class="muted">
+          Runs locally on your device (no accounts, no uploads). Import a transaction CSV, review detected subscriptions,
+          then analyze.
+        </p>
+
+        <div class="grid">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload CSV">
+            <input id="fileInput" type="file" accept=".csv,text/csv" />
+            <div class="dropzone-inner">
+              <div class="dz-title">Drop CSV here</div>
+              <div class="dz-subtitle">or click to select a file</div>
+              <div class="dz-hint">Export “transactions” as CSV from your banking app.</div>
+            </div>
+          </div>
+
+          <div class="card subtle">
+            <h2 class="h2">Workflow</h2>
+            <ol class="steps">
+              <li>Import CSV</li>
+              <li>Review detected subscriptions</li>
+              <li>Confirm & analyze</li>
+            </ol>
+            <div class="small muted">
+              “Unused” is reported as <b>No charge in last 90 days</b> (based on billing activity).
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="review" class="card" hidden>
+        <div class="row between">
+          <div>
+            <h1 class="h1">Review detected subscriptions</h1>
+            <p class="muted">Fix names, remove false positives, then confirm.</p>
+          </div>
+          <div class="row gap">
+            <button id="btnBackToImport" class="btn btn-ghost" type="button">Back</button>
+            <button id="btnConfirmAnalyze" class="btn btn-primary" type="button">Confirm & Analyze</button>
+          </div>
+        </div>
+
+        <div id="mappingCard" class="card subtle" hidden>
+          <h2 class="h2">We need your help mapping columns</h2>
+          <p class="muted">Pick which columns represent Date, Description, and Amount.</p>
+          <div class="row wrap gap">
+            <label class="field">
+              <span>Date</span>
+              <select id="mapDate"></select>
+            </label>
+            <label class="field">
+              <span>Description</span>
+              <select id="mapDesc"></select>
+            </label>
+            <label class="field">
+              <span>Amount</span>
+              <select id="mapAmount"></select>
+            </label>
+            <button id="btnApplyMapping" class="btn btn-primary" type="button">Apply</button>
+          </div>
+          <div class="small muted">We’ll show a preview after you apply.</div>
+        </div>
+
+        <div class="row between wrap gap">
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-label">Transactions parsed</div>
+              <div id="statTx" class="stat-value">—</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Subscriptions detected</div>
+              <div id="statSubs" class="stat-value">—</div>
+            </div>
+          </div>
+          <label class="field">
+            <span>Detection strictness</span>
+            <select id="strictness">
+              <option value="balanced" selected>Balanced</option>
+              <option value="strict">Strict (fewer false positives)</option>
+              <option value="loose">Loose (find more candidates)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table" aria-label="Detected subscriptions">
+            <thead>
+              <tr>
+                <th>Service</th>
+                <th>Avg / month</th>
+                <th>Last charge</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="reviewBody"></tbody>
+          </table>
+        </div>
+        <div class="small muted">Nothing leaves your device. Data is stored locally in your browser.</div>
+      </section>
+
+      <section id="dashboard" class="card" hidden>
+        <div class="row between wrap gap">
+          <div>
+            <h1 class="h1">Dashboard</h1>
+            <p class="muted">Cancel candidates, trends, and quick wins.</p>
+          </div>
+          <div class="row gap">
+            <button id="btnBackToReview" class="btn btn-ghost" type="button">Back to review</button>
+          </div>
+        </div>
+
+        <div class="stats big">
+          <div class="stat">
+            <div class="stat-label">Estimated monthly total</div>
+            <div id="kpiMonthly" class="stat-value">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">No charge in last 90 days</div>
+            <div id="kpiDormant" class="stat-value">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Top cancel candidates</div>
+            <div id="kpiTop" class="stat-value">—</div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card subtle">
+            <h2 class="h2">Cancel candidates</h2>
+            <div id="candidates"></div>
+          </div>
+          <div class="card subtle">
+            <h2 class="h2">Cost trends</h2>
+            <div id="trends"></div>
+          </div>
+        </div>
+
+        <div class="small muted">
+          Note: “No charge in last 90 days” is based on billing activity, not actual usage.
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div class="muted small">
+        Offline-first • No accounts • Stored locally • v1
+      </div>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
